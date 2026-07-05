@@ -401,15 +401,7 @@ typedef struct AudioData {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-static AudioData AUDIO = {          // Global AUDIO context
-
-    // NOTE: Music buffer size is defined by number of samples, independent of sample size and channels number
-    // After some math, considering a sampleRate of 48000, a buffer refill rate of 1/60 seconds and a
-    // standard double-buffering system, a 4096 samples buffer has been chosen, it should be enough
-    // In case of music-stalls, increase this number
-    .Buffer.defaultSize = 0,
-    .mixedProcessor = NULL
-};
+#define AUDIO (*(AudioData*)context->audiodata)
 
 //----------------------------------------------------------------------------------
 // Module Internal Functions Declaration

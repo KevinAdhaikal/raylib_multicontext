@@ -105,6 +105,7 @@
 #endif
 
 #include <stddef.h>  // Required for: size_t
+#include "../raylib.h"
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
@@ -122,9 +123,8 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-extern CoreData CORE;                   // Global CORE state context
-
-static PlatformData platform = { 0 };   // Platform specific data
+const unsigned int PLATFORM_SIZE = sizeof(PlatformData);
+#define platform (*(PlatformData*)context->platformdata)
 
 //----------------------------------------------------------------------------------
 // Module Internal Functions Declaration
@@ -151,7 +151,7 @@ static void CharCallback(GLFWwindow *window, unsigned int codepoint);           
 static void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods);  // GLFW3 Mouse Button Callback, runs on mouse button pressed
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y);             // GLFW3 Cursor Position Callback, runs on mouse move
 static void MouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset);    // GLFW3 Scrolling Callback, runs on mouse wheel
-static void CursorEnterCallback(GLFWwindow *window, int entered);                       // GLFW3 Cursor Enter Callback, cursor enters client area
+static void CursorEnterCallback(GLFWwindow *window, int enter);                         // GLFW3 Cursor Enter Callback, cursor enters client area
 static void JoystickCallback(int jid, int event);                                       // GLFW3 Joystick Connected/Disconnected Callback
 
 // Memory allocator wrappers [used by glfwInitAllocator()]
@@ -1432,6 +1432,10 @@ static void DeallocateWrapper(void *block, void *user)
     RL_FREE(block);
 }
 
+void SwitchPlatformContext() {
+    glfwMakeContextCurrent(platform.handle);
+}
+
 // Initialize platform: graphics, inputs and more
 int InitPlatform(void)
 {
@@ -2167,18 +2171,10 @@ static void MouseScrollCallback(GLFWwindow *window, double xoffset, double yoffs
 }
 
 // GLFW3: Cursor ennter callback, when cursor enters the window
-static void CursorEnterCallback(GLFWwindow *window, int entered)
+static void CursorEnterCallback(GLFWwindow *window, int enter)
 {
-    if (entered) 
-    {
-        // NOTE: Mouse position updated by MouseCursorPosCallback()
-        CORE.Input.Mouse.cursorOnScreen = true;
-    }
-    else 
-    {
-        CORE.Input.Mouse.cursorOnScreen = false;
-        CORE.Input.Mouse.currentPosition = (Vector2){ 0 };
-    }
+    if (enter) CORE.Input.Mouse.cursorOnScreen = true;
+    else CORE.Input.Mouse.cursorOnScreen = false;
 }
 
 // GLFW3: Joystick connected/disconnected callback

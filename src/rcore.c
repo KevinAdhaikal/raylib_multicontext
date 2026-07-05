@@ -394,9 +394,9 @@ typedef struct CoreData {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-RLAPI const char *raylib_version = RAYLIB_VERSION;  // raylib version exported symbol, required for some bindings
+#define CORE (*(CoreData*)context->coredata)
 
-CoreData CORE = { 0 };                              // Global CORE state context
+RLAPI const char *raylib_version = RAYLIB_VERSION;  // raylib version exported symbol, required for some bindings
 
 static int logTypeLevel = LOG_INFO;                 // Minimum log type level
 
@@ -582,6 +582,42 @@ const char *TextFormat(const char *text, ...); // Formatting of text with variab
 //void DisableCursor(void)
 
 // Initialize window and OpenGL context
+RLContext* context = NULL;
+
+RLContext* CreateRLContext() {
+    RLContext* ctx = (RLContext*)malloc(sizeof(RLContext));
+    if (ctx) {
+        ctx->coredata = calloc(1, sizeof(CoreData));
+        ctx->platformdata = calloc(1, PLATFORM_SIZE);
+        ctx->audiodata = calloc(1, 4896);
+        ctx->fontdata = calloc(1, 48);
+        ctx->rlgldata = calloc(1, sizeof(rlglData));
+        ctx->gesturedata = calloc(1, sizeof(GesturesData));
+
+        ((GesturesData*)ctx->gesturedata)->current = GESTURE_NONE;
+        ((GesturesData*)ctx->gesturedata)->Touch.firstId = -1;
+        ((GesturesData*)ctx->gesturedata)->enabledFlags = 0b0000001111111111;
+    }
+    return ctx;
+}
+
+void SetRLContext(RLContext* ctx) {
+    if (!ctx || context == ctx) return;
+    context = ctx;
+    SwitchPlatformContext();
+}
+
+void DeinitRLContext(RLContext* ctx) {
+    if (ctx) {
+        free(ctx->coredata);
+        free(ctx->platformdata);
+        free(ctx);
+    }
+    if (context == ctx) {
+        context = NULL;
+    }
+}
+
 void InitWindow(int width, int height, const char *title)
 {
     TRACELOG(LOG_INFO, "Initializing raylib %s", RAYLIB_VERSION);
@@ -2825,24 +2861,10 @@ int ChangeDirectory(const char *dirPath)
 // Check if given path point to a file
 bool IsPathFile(const char *path)
 {
-    bool result = false;
+    struct stat result = { 0 };
+    stat(path, &result);
 
-    struct stat info = { 0 };
-    stat(path, &info);
-
-    if (S_ISREG(info.st_mode)) result = true;
-
-    return result;
-}
-
-// Check if given path point to a directory
-bool IsPathDirectory(const char *path)
-{
-    bool result = false;
-
-    if (!IsPathFile(path)) result = true;
-
-    return result;
+    return S_ISREG(result.st_mode);
 }
 
 // Check if fileName is valid for the platform/OS
@@ -3940,7 +3962,7 @@ bool IsGamepadAvailable(int gamepad)
 {
     bool result = false;
 
-    if ((gamepad >= 0) && (gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad]) result = true;
+    if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad]) result = true;
 
     return result;
 }
@@ -3960,7 +3982,7 @@ bool IsGamepadButtonPressed(int gamepad, int button)
 {
     bool pressed = false;
 
-    if ((gamepad >= 0) && (gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
+    if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
     {
         if ((CORE.Input.Gamepad.previousButtonState[gamepad][button] == 0) && (CORE.Input.Gamepad.currentButtonState[gamepad][button] == 1)) pressed = true;
     }
@@ -3973,7 +3995,7 @@ bool IsGamepadButtonDown(int gamepad, int button)
 {
     bool down = false;
 
-    if ((gamepad >= 0) && (gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
+    if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
     {
         if (CORE.Input.Gamepad.currentButtonState[gamepad][button] == 1) down = true;
     }
@@ -3986,7 +4008,7 @@ bool IsGamepadButtonReleased(int gamepad, int button)
 {
     bool released = false;
 
-    if ((gamepad >= 0) && (gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
+    if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
     {
         if ((CORE.Input.Gamepad.previousButtonState[gamepad][button] == 1) && (CORE.Input.Gamepad.currentButtonState[gamepad][button] == 0)) released = true;
     }
@@ -3999,7 +4021,7 @@ bool IsGamepadButtonUp(int gamepad, int button)
 {
     bool up = false;
 
-    if ((gamepad >= 0) && (gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
+    if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (button < MAX_GAMEPAD_BUTTONS))
     {
         if (CORE.Input.Gamepad.currentButtonState[gamepad][button] == 0) up = true;
     }
@@ -4029,7 +4051,7 @@ float GetGamepadAxisMovement(int gamepad, int axis)
 {
     float value = ((axis == GAMEPAD_AXIS_LEFT_TRIGGER) || (axis == GAMEPAD_AXIS_RIGHT_TRIGGER))? -1.0f : 0.0f;
 
-    if ((gamepad >= 0) && (gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (axis < MAX_GAMEPAD_AXES))
+    if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (axis < MAX_GAMEPAD_AXES))
     {
         float movement = (value < 0.0f)? CORE.Input.Gamepad.axisState[gamepad][axis] : fabsf(CORE.Input.Gamepad.axisState[gamepad][axis]);
 

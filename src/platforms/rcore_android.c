@@ -84,8 +84,8 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-extern CoreData CORE;                   // Global CORE state context
-static PlatformData platform = { 0 };   // Platform specific data
+const unsigned int PLATFORM_SIZE = sizeof(PlatformData);
+#define platform (*(PlatformData*)context->platformdata)
 
 //----------------------------------------------------------------------------------
 // Local Variables Definition

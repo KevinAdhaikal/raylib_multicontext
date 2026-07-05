@@ -108,9 +108,8 @@ typedef const char *(WINAPI *PFNWGLGETEXTENSIONSSTRINGARBPROC)(HDC hdc);
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-extern CoreData CORE;                   // Global CORE state context
-
-static PlatformData platform = { 0 };   // Platform specific data
+const unsigned int PLATFORM_SIZE = sizeof(PlatformData);
+#define platform (*(PlatformData*)context->platformdata)
 
 // Required WGL functions
 static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
@@ -2213,7 +2212,7 @@ static unsigned SanitizeFlags(int mode, unsigned flags)
 //
 // This design takes care of many odd corner cases. For example, in case of restoring
 // a window that was previously maximized AND minimized and those two flags need to be removed,
-// ShowWindow with SW_RESTORE twice need to be actually calleed. Another example is
+// ShowWindow with SW_RESTORE twice need to bee actually calleed. Another example is
 // wheen having a maximized window, if the undecorated flag is modified then the window style
 // needs to be updated, but updating the style would mean the window size would change
 // causing the window to lose its Maximized state which would mean the window size

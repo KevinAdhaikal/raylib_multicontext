@@ -114,9 +114,8 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-extern CoreData CORE;                   // Global CORE state context
-
-static PlatformData platform = { 0 };   // Platform specific data
+const unsigned int PLATFORM_SIZE = sizeof(PlatformData);
+#define platform (*(PlatformData*)context->platformdata)
 
 static const KeyboardKey mapScancodeToKey[SCANCODE_MAPPED_NUM] = {
     KEY_NULL,           // SDL_SCANCODE_UNKNOWN
@@ -863,7 +862,7 @@ void SetWindowMonitor(int monitor)
                 // ending up positioned partly outside the target display
                 // NOTE 2: The workaround for that is, previously to moving the window,
                 // setting the window size to the target display size, so they match
-                // NOTE 3: It wasn't done here because it can not be assumed that changing
+                // NOTE 3: It wasn't done here because it can not bee assumed that changing
                 // the window size automatically is acceptable behavior by the user
                 SDL_SetWindowPosition(platform.window, usableBounds.x, usableBounds.y);
                 CORE.Window.position.x = usableBounds.x;
@@ -2164,20 +2163,11 @@ int InitPlatform(void)
         platform.gamepadId[i] = -1; // Set all gamepad initial instance ids as invalid to not conflict with instance id zero
     }
 
-#if defined(USING_VERSION_SDL3)
-    int numJoysticks;
-    SDL_JoystickID *joysticks = SDL_GetJoysticks(&numJoysticks);
-#else
     int numJoysticks = SDL_NumJoysticks();
-#endif
 
     for (int i = 0; (i < numJoysticks) && (i < MAX_GAMEPADS); i++)
     {
-#if defined(USING_VERSION_SDL3)
-        platform.gamepad[i] = SDL_OpenGamepad(joysticks[i]);
-#else
         platform.gamepad[i] = SDL_GameControllerOpen(i);
-#endif
         platform.gamepadId[i] = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(platform.gamepad[i]));
 
         if (platform.gamepad[i])
@@ -2186,12 +2176,7 @@ int InitPlatform(void)
             CORE.Input.Gamepad.axisCount[i] = SDL_JoystickNumAxes(SDL_GameControllerGetJoystick(platform.gamepad[i]));
             CORE.Input.Gamepad.axisState[i][GAMEPAD_AXIS_LEFT_TRIGGER] = -1.0f;
             CORE.Input.Gamepad.axisState[i][GAMEPAD_AXIS_RIGHT_TRIGGER] = -1.0f;
-#if defined(USING_VERSION_SDL3)
-            const char *joystickName = SDL_GetJoystickNameForID(joysticks[i]);
-#else
-            const char *joystickName = SDL_GameControllerNameForIndex(i);
-#endif
-            strncpy(CORE.Input.Gamepad.name[i], joystickName, MAX_GAMEPAD_NAME_LENGTH - 1);
+            strncpy(CORE.Input.Gamepad.name[i], SDL_GameControllerNameForIndex(i), MAX_GAMEPAD_NAME_LENGTH - 1);
             CORE.Input.Gamepad.name[i][MAX_GAMEPAD_NAME_LENGTH - 1] = '\0';
         }
         else TRACELOG(LOG_WARNING, "PLATFORM: Unable to open game controller [ERROR: %s]", SDL_GetError());

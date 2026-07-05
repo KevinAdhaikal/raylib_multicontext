@@ -192,9 +192,8 @@ typedef struct {
 //----------------------------------------------------------------------------------
 // Global Variables Definition
 //----------------------------------------------------------------------------------
-extern CoreData CORE;                   // Global CORE state context
-
-static PlatformData platform = { 0 };   // Platform specific
+const unsigned int PLATFORM_SIZE = sizeof(PlatformData);
+#define platform (*(PlatformData*)context->platformdata)
 
 #if defined(__linux__) // prevent collision of raylibs KEY_<X> and linux/input.h KEY_<X>
     #undef KEY_NULL

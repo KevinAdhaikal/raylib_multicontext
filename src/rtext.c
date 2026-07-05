@@ -125,8 +125,7 @@
 //----------------------------------------------------------------------------------
 // Default font provided by raylib
 // NOTE: Default font is loaded on InitWindow() and disposed on CloseWindow() [module: core]
-static Font defaultFont = { 0 };
-
+#define defaultFont (*(Font*)context->fontdata)
 // Text vertical line spacing in pixels (between lines)
 static int textLineSpacing = 2;
 
@@ -2200,43 +2199,18 @@ char *TextToSnake(const char *text)
     if (text != NULL)
     {
         // Check for next separator to upper case another character
-        for (int i = 0, j = 0; (i < MAX_TEXT_BUFFER_LENGTH - 1) && (text[j] != '\0'); j++)
+        for (int i = 0, j = 0; (i < MAX_TEXT_BUFFER_LENGTH - 1) && (text[j] != '\0'); i++, j++)
         {
-            if (text[j] == ' ')
+            if ((text[j] >= 'A') && (text[j] <= 'Z'))
             {
-                if ((i > 0) && (buffer[i - 1] != '_'))
+                if (i >= 1)
                 {
                     buffer[i] = '_';
                     i++;
                 }
-            }
-            else if ((text[j] >= 'A') && (text[j] <= 'Z'))
-            {
-                if ((i > 0) && (buffer[i - 1] != '_'))
-                {
-                    char prev = text[j - 1];
-                    char next = text[j + 1];
-
-                    // Considering multiple cap leters to be on single word (HTTPRequest --> http_request)
-                    if (((prev >= 'a') && (prev <= 'z')) ||
-                        (((prev >= 'A') && (prev <= 'Z')) && ((next >= 'a') && (next <= 'z'))))
-                    {
-                        if (i < MAX_TEXT_BUFFER_LENGTH - 2)
-                        {
-                            buffer[i] = '_';
-                            i++;
-                        }
-                    }
-                }
-
                 buffer[i] = text[j] + 32;
-                i++;
             }
-            else
-            {
-                buffer[i] = text[j];
-                i++;
-            }
+            else buffer[i] = text[j];
         }
     }
 
